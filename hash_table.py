@@ -20,14 +20,13 @@ def hash_function1(table: "HashTable", key: str) -> int:
 def hash_function2(table: "HashTable", key: str) -> int:
     '''
     Task 2
-    Improved hash function that reduces collisions to ≤3.
-    Uses polynomial rolling hash (full integer) without intermediate modulo.
+    DJB2 hash function – reliably reduces collisions to ≤3 for the test data.
     '''
-    hash_val = 0
+    hash_val = 5381
     for ch in key:
-        hash_val = hash_val * 31 + ord(ch)
+        
+        hash_val = ((hash_val << 5) + hash_val) + ord(ch)
     return hash_val % table.size
-
 
 # ------------------------------------------------------------
 # Hash Table Class
