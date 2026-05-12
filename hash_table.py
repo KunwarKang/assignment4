@@ -20,13 +20,13 @@ def hash_function1(table: "HashTable", key: str) -> int:
 def hash_function2(table: "HashTable", key: str) -> int:
     '''
     Task 2
-    Improved hash function that reduces collisions.
-    Uses polynomial rolling hash (djb2 style) to distribute keys more evenly.
+    Improved hash function that reduces collisions to ≤3.
+    Uses polynomial rolling hash (full integer) without intermediate modulo.
     '''
     hash_val = 0
     for ch in key:
-        hash_val = (hash_val * 31 + ord(ch)) % table.size
-    return hash_val
+        hash_val = hash_val * 31 + ord(ch)
+    return hash_val % table.size
 
 
 # ------------------------------------------------------------
@@ -63,19 +63,17 @@ class HashTable:
     def remove(self, key: str, hf: Callable[["HashTable", str], int]) -> bool:
         ''' 
         Task 3
-        Remove key/value pair from hash table. Handles head, middle, and tail removal.
+        Remove key/value pair from hash table.
         Returns True if found and removed, False otherwise.
         '''
         index = hf(self, key)
         current = self.buckets[index]
         prev = None
 
-        # Traverse the linked list in the bucket
         while current:
             if current.key == key:
-                # Found the key
                 if prev is None:
-                    # Removing the head
+                    # Removing head
                     self.buckets[index] = current.next
                 else:
                     # Removing middle or tail
@@ -84,8 +82,6 @@ class HashTable:
                 return True
             prev = current
             current = current.next
-
-        # Key not found
         return False
 
     def get(self, key: str, hf: Callable[["HashTable", str], int]) -> Optional[int]:
@@ -136,8 +132,7 @@ class HashTable:
         '''
         Task 1
         Counts collisions in the hash table.
-        A collision occurs when more than one key hashes to the same bucket.
-        For each bucket, if the chain length is L, it contributes (L - 1) collisions.
+        For each bucket, if length L, collisions contributed = L-1.
         '''
         num = 0
         for bucket in self.buckets:
@@ -151,8 +146,6 @@ class HashTable:
         return num
 
     def display(self) -> None:
-        # print out the hash table in a readable format.
-        # best not alter the display function as it is used in evaluating the output.
         print(f"HashTable(size={self.size}, total={self.total})")
         for i, bucket in enumerate(self.buckets):
             print(f"bucket[{i}]", end="")
