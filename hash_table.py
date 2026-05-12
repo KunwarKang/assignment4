@@ -16,15 +16,18 @@ class Node:
 def hash_function1(table: "HashTable", key: str) -> int:
     return ord(key[0]) % table.size
 
+
 def hash_function2(table: "HashTable", key: str) -> int:
     '''
     Task 2
-    You are to create an updated hash function that does a better job of 
-    removing collisions. Full points for getting the number of collisions
-    down to 3, and partial points for 4. Currently it's the same as 
-    hash_function1 and needs to be update.d
+    Improved hash function that reduces collisions.
+    Uses polynomial rolling hash (djb2 style) to distribute keys more evenly.
     '''
-    return ord(key[0]) % table.size
+    hash_val = 0
+    for ch in key:
+        hash_val = (hash_val * 31 + ord(ch)) % table.size
+    return hash_val
+
 
 # ------------------------------------------------------------
 # Hash Table Class
@@ -60,11 +63,29 @@ class HashTable:
     def remove(self, key: str, hf: Callable[["HashTable", str], int]) -> bool:
         ''' 
         Task 3
-        Here you should implement a remove method that will find a particular 
-        key/value pair stored in the hash table and remove it. It should consider
-        the edge cases described in the readme file. This function should return 
-        True if the element is found and deleted, and False if not found
+        Remove key/value pair from hash table. Handles head, middle, and tail removal.
+        Returns True if found and removed, False otherwise.
         '''
+        index = hf(self, key)
+        current = self.buckets[index]
+        prev = None
+
+        # Traverse the linked list in the bucket
+        while current:
+            if current.key == key:
+                # Found the key
+                if prev is None:
+                    # Removing the head
+                    self.buckets[index] = current.next
+                else:
+                    # Removing middle or tail
+                    prev.next = current.next
+                self.total -= 1
+                return True
+            prev = current
+            current = current.next
+
+        # Key not found
         return False
 
     def get(self, key: str, hf: Callable[["HashTable", str], int]) -> Optional[int]:
@@ -114,11 +135,19 @@ class HashTable:
     def collisions(self) -> int:
         '''
         Task 1
-        You are to update this collisions function to actually compute the 
-        number of collisions in the hash table. 
+        Counts collisions in the hash table.
+        A collision occurs when more than one key hashes to the same bucket.
+        For each bucket, if the chain length is L, it contributes (L - 1) collisions.
         '''
-
         num = 0
+        for bucket in self.buckets:
+            count = 0
+            current = bucket
+            while current:
+                count += 1
+                current = current.next
+            if count > 1:
+                num += count - 1
         return num
 
     def display(self) -> None:
