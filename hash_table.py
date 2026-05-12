@@ -10,7 +10,7 @@ class Node:
 
 
 # ------------------------------------------------------------
-# Hash functions 
+# Hash functions
 # ------------------------------------------------------------
 
 def hash_function1(table: "HashTable", key: str) -> int:
@@ -20,13 +20,15 @@ def hash_function1(table: "HashTable", key: str) -> int:
 def hash_function2(table: "HashTable", key: str) -> int:
     '''
     Task 2
-    DJB2 hash function – reliably reduces collisions to ≤3 for the test data.
+    Improved hash function with fewer collisions.
     '''
-    hash_val = 5381
-    for ch in key:
-        
-        hash_val = ((hash_val << 5) + hash_val) + ord(ch)
-    return hash_val % table.size
+    total = 0
+
+    for i in range(len(key)):
+        total += ord(key[i]) * (i + 1)
+
+    return total % table.size
+
 
 # ------------------------------------------------------------
 # Hash Table Class
@@ -42,58 +44,75 @@ class HashTable:
     # Core operations
     # --------------------------------------------------------
 
-    def add(self, key: str, value: int, hf: Callable[["HashTable", str], int]) -> None:
-        index = hf(self, key)
-        head = self.buckets[index]
+    def add(self, key: str, value: int,
+            hf: Callable[["HashTable", str], int]) -> None:
 
-        # Replace existing key
-        current = head
+        index = hf(self, key)
+
+        current = self.buckets[index]
+
+        # Update existing key if found
         while current:
             if current.key == key:
                 current.value = value
                 return
             current = current.next
 
-        # Insert new node at head
-        new_node = Node(key, value, head)
+        # Add new node at front
+        new_node = Node(key, value, self.buckets[index])
         self.buckets[index] = new_node
         self.total += 1
 
-    def remove(self, key: str, hf: Callable[["HashTable", str], int]) -> bool:
-        ''' 
-        Task 3
-        Remove key/value pair from hash table.
-        Returns True if found and removed, False otherwise.
+    def remove(self, key: str,
+               hf: Callable[["HashTable", str], int]) -> bool:
         '''
+        Task 3
+        Remove a key/value pair from the hash table.
+        '''
+
         index = hf(self, key)
+
         current = self.buckets[index]
-        prev = None
+        previous = None
 
         while current:
+
             if current.key == key:
-                if prev is None:
-                    # Removing head
+
+                # Removing head node
+                if previous is None:
                     self.buckets[index] = current.next
+
+                # Removing middle or end node
                 else:
-                    # Removing middle or tail
-                    prev.next = current.next
+                    previous.next = current.next
+
                 self.total -= 1
                 return True
-            prev = current
+
+            previous = current
             current = current.next
+
+        # Key not found
         return False
 
-    def get(self, key: str, hf: Callable[["HashTable", str], int]) -> Optional[int]:
+    def get(self, key: str,
+            hf: Callable[["HashTable", str], int]) -> Optional[int]:
+
         index = hf(self, key)
+
         current = self.buckets[index]
+
         while current:
             if current.key == key:
                 return current.value
+
             current = current.next
+
         return None
 
     # --------------------------------------------------------
-    # dunder methods for easy interface
+    # dunder methods
     # --------------------------------------------------------
 
     def __setitem__(self, key: str, value: int) -> None:
@@ -101,8 +120,10 @@ class HashTable:
 
     def __getitem__(self, key: str) -> int:
         value = self.get(key, hash_function1)
+
         if value is None:
             raise KeyError(key)
+
         return value
 
     def __delitem__(self, key: str) -> None:
@@ -113,8 +134,11 @@ class HashTable:
         return self.get(key, hash_function1) is not None
 
     def __iter__(self) -> Iterator[str]:
+
         for bucket in self.buckets:
+
             current = bucket
+
             while current:
                 yield current.key
                 current = current.next
@@ -130,30 +154,44 @@ class HashTable:
     def collisions(self) -> int:
         '''
         Task 1
-        Counts collisions in the hash table.
-        For each bucket, if length L, collisions contributed = L-1.
+        Count the number of collisions in the hash table.
         '''
+
         num = 0
+
         for bucket in self.buckets:
+
             count = 0
             current = bucket
+
             while current:
                 count += 1
                 current = current.next
+
             if count > 1:
                 num += count - 1
+
         return num
 
     def display(self) -> None:
+        # print out the hash table in a readable format.
+        # best not alter the display function as it is used in evaluating the output.
         print(f"HashTable(size={self.size}, total={self.total})")
+
         for i, bucket in enumerate(self.buckets):
+
             print(f"bucket[{i}]", end="")
+
             current = bucket
+
             if not current:
                 print(" -|")
                 continue
+
             while current:
                 print(f" -> (key={current.key}, value={current.value})", end="")
                 current = current.next
+
             print(" -|")
+
         print()
